@@ -14,6 +14,7 @@ function Practice() {
 
     // We'll store the final combined .txt as a blob URL
     const [combinedSubFrameURL, setCombinedSubFrameURL] = useState(null);
+    console.log(combinedSubFrameURL);
 
     // Store the exercise name for the heading
     const [exerciseName, setExerciseName] = useState("");
@@ -95,7 +96,7 @@ function Practice() {
         if (isCorrect) {
             console.log("All frames recognized / completed successfully!");
             // You can navigate away or do other logic here
-            navigate("/navigation");
+            //navigate("/navigation");
         }
     }
 
@@ -185,6 +186,11 @@ function Practice() {
                         onFrameSuccess={handleFrameSuccess}
                     />
                 </div>
+                {progressPercent === 100 && (
+                    <p style={{ textAlign: 'center', color: '#566B30', fontWeight: 'bold' }}>
+                        ✅ Great job! You've completed all frames. Feel free to continue practicing.
+                    </p>
+                )}
 
                 {/* No skipping or next/back buttons, because
                     we let the child auto-advance. */}

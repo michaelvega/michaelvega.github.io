@@ -334,13 +334,19 @@ function HandTracking({ wordID, onFrameChange, selectedFrameIndex, image, onSign
         if (!cameraStarted) return;   // Only if camera is already running
         if (!handsRef.current) return;
 
+
+
         // Each time archetypeLandmarks changes, we reconfigure maxNumHands
         const validHandsInArchetype = archetypeLandmarks.filter(
             (hand) => hand.length === 21
         ).length;
         const maxHands = validHandsInArchetype || 1;
 
+        console.log("Expected handssss:", validHandsInArchetype);
+
         console.log("Reconfiguring Mediapipe for maxHands =", maxHands);
+
+
 
         handsRef.current.setOptions({
             maxNumHands: maxHands,
@@ -350,7 +356,7 @@ function HandTracking({ wordID, onFrameChange, selectedFrameIndex, image, onSign
             selfieMode: false,
         });
 
-    }, [archetypeLandmarks, cameraStarted]);
+    }, [archetypeLandmarks, cameraStarted, selectedFrameIndex]);
 
 
 
@@ -714,7 +720,7 @@ function HandTracking({ wordID, onFrameChange, selectedFrameIndex, image, onSign
                     // This means we expected a hand here but it wasn't detected
                     console.warn(`Hand ${handIndex + 1} not detected. Expected ${validHandsInArchetype} hands, got ${results.multiHandLandmarks.length}.`);
                     allHandsCorrect = false;
-                    continue;
+                    return;
                 }
 
                 // If we have the hand detected, proceed with the existing logic
