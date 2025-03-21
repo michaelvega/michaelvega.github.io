@@ -68,6 +68,13 @@ function DictionaryLearn() {
         }
     };
 
+    const handleSignComplete = (isCorrect) => {
+        if (isCorrect) {
+            setIsSignComplete(true);
+            localStorage.setItem(wordID, "completed"); // ✅ Save completion status
+        }
+    };
+
     // Step backward: only relevant if we’re on hand tracking
     const handleBack = () => {
         if (currentIndex > 0) {
@@ -109,7 +116,7 @@ function DictionaryLearn() {
                                 selectedFrameIndex={selectedFrameIndex}
                                 onFrameChange={handleFrameChange}
                                 image={wordData.image}
-                                onSignComplete={(isCorrect) => setIsSignComplete(isCorrect)}
+                                onSignComplete={handleSignComplete}
                                 mode={"dictionary"} // dictionary so no subframe url
                             />
                         )}

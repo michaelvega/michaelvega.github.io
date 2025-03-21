@@ -1,11 +1,10 @@
 import './App.css';
 import { Routes, Route, useNavigate } from "react-router-dom";
-import {ExperimentFilled, HomeFilled, SettingFilled, SmileFilled, BookFilled} from "@ant-design/icons";
+import {ExperimentFilled, HomeFilled, SettingFilled, SmileFilled, BookFilled, RiseOutlined} from "@ant-design/icons";
 import 'bootstrap/dist/css/bootstrap.css';
 import Landing from "./components/landing/Landing";
 import Introduction from "./components/introduction/Introduction";
 import Learn from "./components/learn/Learn";
-import Navigation from "./components/navigation/Navigation"
 import IntroduceYourself from './components/introduceYourself/IntroduceYourself';
 import Hands from "./components/handtrackingstate/HandTracking";
 import HandGestureComparison from "./components/handtrackingstate/HandTracking";
@@ -14,6 +13,8 @@ import DropDownHelp from "./components/dropdownhelp/DropDownHelp";
 import SignIn from "./components/signin/SignIn";
 import DictionaryLearn from "./components/learn/DictionaryLearn";
 import Practice from "./components/learn/Practice";
+import Units from "./components/units/Units";
+import Dictionary from "./components/dictionary/Dictionary";
 
 
 
@@ -36,8 +37,12 @@ function App() {
     navigate('/learn');
   };
 
-  const navigateNavigation = () => {
-    navigate('/navigation')
+  const navigateUnits = () => {
+    navigate('/units')
+  }
+
+  const navigateDictionary = () => {
+    navigate('/dictionary')
   }
 
   const navigateIntroduceYourself = () => {
@@ -77,22 +82,24 @@ function App() {
         <div className={"bottomnavWrapper"}>
           <center>
             <div className="bottomnav">
-              <button type="button" className="reactButton" onClick={navigateLanding}><HomeFilled /></button>
-              <button type="button" className="reactButton" onClick={navigateNavigation}><BookFilled /></button>
-              <button type="button" className="reactButton" onClick={navigateSettings}><SettingFilled /></button>
+              <button type="button" className="reactButton" onClick={navigateLanding}><HomeFilled/></button>
+              <button type="button" className="reactButton" onClick={navigateUnits}><RiseOutlined/></button>
+              <button type="button" className="reactButton" onClick={navigateDictionary}><BookFilled/></button>
+              <button type="button" className="reactButton" onClick={navigateSettings}><SettingFilled/></button>
             </div>
           </center>
         </div>
 
         <Routes>
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<Landing/>}/>
           <Route path="/landing" element={<Landing />} />
           <Route path="/introduction" element={<Introduction />} />
           <Route path="/learn/:exerciseID/:wordID" element={<Learn type={"learn"} />} />
           <Route path="/practice/:exerciseID" element={<Practice type={"practice"} />} />
           <Route path="/dictionary/:wordID" element={<DictionaryLearn type={"learn"} />} />
-          <Route path="/navigation" element={<Navigation />} />
-          <Route path="/introduceYourself" element={<IntroduceYourself />} />
+          <Route path="/dictionary/" element={<Dictionary />} />
+          <Route path="/units" element={<Units />} />
+          <Route path="/units/introduceYourself" element={<IntroduceYourself />} />
           <Route path={"/dropdown"} element={<DropDownHelp/>} />
           <Route path ={"/signin"} element = {<SignIn/>} />
         </Routes>

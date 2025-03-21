@@ -1,25 +1,25 @@
 import React from "react";
 import 'bootstrap/dist/css/bootstrap.css';
-import "./Navigation.css";
+import "./Units.css";
 import {Link, useNavigate} from "react-router-dom";
 import {Button} from "antd";
 
 
 
-function Navigation() {
+function Units() {
 
     const navigate = useNavigate();
 
     const navigateIntroduceYourself = () => {
-        navigate('/introduceYourself')
+        navigate('/units/introduceYourself')
     }
 
 
 
 
     return (
-        <div className = "navigationWrapper">
-            <h1 className = "title">Navigation</h1>
+        <div className = "unitsWrapper">
+            <h1 className = "title">Units</h1>
 
             <Button id = "introduceYourself" className="bigGreenButton" type="primary" onClick={navigateIntroduceYourself}>Introduce Yourself</Button>
             <Button id = "basicPhrases" className="bigGreenButton" type="primary">Basic Phrases</Button>
@@ -32,4 +32,4 @@ function Navigation() {
     )
 }
 
-export default Navigation;
+export default Units;

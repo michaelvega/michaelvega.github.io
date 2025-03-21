@@ -1,0 +1,21 @@
+.list {
+    display: flex;
+    flex-direction: column;
+}
+
+.list-item {
+    display: flex;
+    align-items: center;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid black;
+    gap: 0.5rem;
+}
+
+.title {
+    margin-bottom: 0;
+}
+.titleDescription {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
