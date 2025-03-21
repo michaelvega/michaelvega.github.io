@@ -34,18 +34,30 @@ function DictionaryLearn() {
     // We have just ONE sign here, so track whether user is in the tutorial or hand tracking:
     const [currentIndex, setCurrentIndex] = useState(0);
 
+    const totalFrames = wordData.numpyFrames?.length || 1; // Total frames per sign
+
+    console.log("Total Frames", totalFrames);
+
+
     // Track if the user has successfully completed the sign
     const [isSignComplete, setIsSignComplete] = useState(false);
 
     // If the sign has multiple sub-frames, we can track them here:
     const [selectedFrameIndex, setSelectedFrameIndex] = useState(0);
+    console.log("Selected Framessss", selectedFrameIndex);
 
     if (!wordData) {
         return <div>Content not found (invalid wordID).</div>;
     }
 
     // 0% if not complete, 100% if sign is complete
-    const progressPercent = isSignComplete ? 100 : 0;
+    //const progressPercent = isSignComplete ? 100 : 0;
+
+    const progressPercent = (currentIndex === components.length - 1 && totalFrames > 0 && !isSignComplete)
+        ? Math.round((selectedFrameIndex / totalFrames) * 100)
+        : (currentIndex === components.length - 1 && isSignComplete)
+            ? 100
+            : 0;
 
     const handleFrameChange = (newIndex) => {
         console.log("HELLOHELLOHELLOHELLOHELLOHELLOHELLOHELLOHELLOHELLOHELLOHELLOHELLOHELLO")
