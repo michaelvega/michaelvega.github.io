@@ -38,6 +38,19 @@ function Learn() {
     const [selectedFrameIndex, setSelectedFrameIndex] = useState(0); // Frame-level control for HandTracking
     const [isSignComplete, setIsSignComplete] = useState(false); // Track sign completion
 
+    const [completedSubframeSet, setCompletedSubframeSet] = useState(new Set());
+    const handleFrameSuccess = (frameIndex) => {
+        const key = `${frames[currentFrameIndex]}-${frameIndex}`; // e.g., "3-1" means sign 3, frame 1
+
+        setCompletedSubframeSet(prevSet => {
+            if (prevSet.has(key)) return prevSet; // already counted
+
+            const newSet = new Set(prevSet);
+            newSet.add(key);
+            return newSet;
+        });
+    };
+
 
     const handleFrameChange = (newIndex) => {
         setSelectedFrameIndex(newIndex);
@@ -112,7 +125,9 @@ function Learn() {
     }, selectedFrameIndex + 1); // Include the current frame's progress
 
 // Progress percentage
-    const progressPercent = ((completedFrames - 1) / totalFrames) * 100;
+    console.log("Total Frames: ", totalFrames);
+    console.log("completedSubframes:", completedSubframeSet);
+    const progressPercent = Math.min(Math.round((completedSubframeSet.size / totalFrames) * 100), 100);
 
 
 
@@ -139,7 +154,16 @@ function Learn() {
                             {currentIndex === 0 ? (
                                 <Tutorial wordID={wordID} /> // Pass wordID as a prop to Tutorial
                             ) : (
-                                <HandTracking key={wordID} wordID={wordID} selectedFrameIndex={selectedFrameIndex} onFrameChange={handleFrameChange} image={image} onSignComplete={(isCorrect) => setIsSignComplete(isCorrect)} mode={"learn"}   /> // Pass wordID as a prop to HandTracking, no subframeURL
+                                <HandTracking
+                                    key={wordID}
+                                    wordID={wordID}
+                                    selectedFrameIndex={selectedFrameIndex}
+                                    onFrameChange={handleFrameChange}
+                                    image={image}
+                                    onSignComplete={(isCorrect) => setIsSignComplete(isCorrect)}
+                                    mode={"learn"}
+                                    onFrameSuccess={handleFrameSuccess} // ✅ Track subframe completions
+                                />
                             )}
                         </div>
 
