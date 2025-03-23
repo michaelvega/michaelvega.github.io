@@ -158,68 +158,96 @@ function HandTracking({ wordID, onFrameChange, selectedFrameIndex, image, onSign
     useEffect(() => {
         let isMounted = true;
 
-        if (mode === "learn" || mode ==="dictionary") {
+        let allParsedFrames = [];
+
+        if (mode === "learn" || mode === "dictionary") {
+            console.log(`Learn aggregator => wordID=${wordID}`);
+
             const wordData = WordList.find(item => item.id === parseInt(wordID));
-            if (wordData && wordData.numpyFrames && wordData.numpyFrames[selectedFrameIndex]) {
-                console.log("Current wordID:", wordID, "Selected Frame:", selectedFrameIndex);
+            if (!wordData || !wordData.numpyFrames) {
+                console.warn("No word data or no numpyFrames for ID=", wordID);
+                return;
+            }
 
-                // Instead of clearing immediately, we just overwrite once data is fetched
-                setWordDataContext(wordData);
+            const frames = wordData.numpyFrames;
+            // frames is an array of .txt references, e.g. [numpyZ1, numpyZ2, ...]
+            // Some might contain lines with “Hand 1” + “Hand 2” (two-hand sign),
+            // some might be a single-hand sign, etc.
 
-                const frameUrls = wordData.numpyFrames;
-                const noHands = wordData.noHands || 1;
-                const archetypeUrl = frameUrls[selectedFrameIndex];
+            // We'll accumulate all sub-frames in an array-of-frames
+            const allParsedFrames = [];
 
-                fetch(archetypeUrl)
-                    .then(response => response.text())
-                    .then(text => {
-                        if (!isMounted) return;
-                        const lines = text.trim().split('\n');
+            (async () => {
+                try {
+                    for (let txtUrl of frames) {
+                        console.log("Learn aggregator fetching =>", txtUrl);
+                        const resp = await fetch(txtUrl);
+                        const fullText = await resp.text();
 
-                        if (noHands === 1) {
-                            const parsedData = lines
-                                .map(line => {
-                                    const values = line.trim().split(/\s+/).map(Number);
-                                    return values.includes(NaN) || values.length !== 3 ? null : values;
-                                })
-                                .filter(item => item !== null)
-                                .slice(0, 21);
-
-                            if (parsedData.length === 21) {
-                                setArchetypeLandmarks([parsedData]);
-                                console.log("Parsed archetype landmarks (one hand):", parsedData);
-                            } else {
-                                console.error("Error: Expected 21 points for one hand, but got", parsedData.length);
-                            }
-                        } else if (noHands === 2) {
+                        // Check if "Hand 2" lines exist => two-hand sign
+                        const hasHand2 = fullText.includes("Hand 2");
+                        if (hasHand2) {
                             const hand1Landmarks = [];
                             const hand2Landmarks = [];
                             let currentHand = null;
 
-                            for (let line of lines) {
+                            for (let line of fullText.split("\n")) {
                                 line = line.trim();
-                                if (line.startsWith('Hand 1')) {
+                                if (line.startsWith("Hand 1")) {
                                     currentHand = hand1Landmarks;
-                                } else if (line.startsWith('Hand 2')) {
+                                    continue;
+                                }
+                                if (line.startsWith("Hand 2")) {
                                     currentHand = hand2Landmarks;
-                                } else if (currentHand) {
-                                    const values = line.trim().split(/\s+/).map(Number);
-                                    if (values.length === 3 && !values.includes(NaN)) {
-                                        currentHand.push(values);
+                                    continue;
+                                }
+                                if (currentHand) {
+                                    const vals = line.split(/\s+/).map(Number);
+                                    if (vals.length === 3 && !vals.includes(NaN)) {
+                                        currentHand.push(vals);
                                     }
                                 }
                             }
+                            allParsedFrames.push([hand1Landmarks, hand2Landmarks]);
 
-                            if (hand1Landmarks.length === 21 && (hand2Landmarks.length === 21 || hand2Landmarks.length === 0)) {
-                                setArchetypeLandmarks([hand1Landmarks, hand2Landmarks]);
-                                console.log("Parsed archetype landmarks:", { hand1Landmarks, hand2Landmarks });
-                            } else {
-                                console.error("Error: Expected 21 points for each hand, but got", hand1Landmarks.length, hand2Landmarks.length);
-                            }
+                        } else {
+                            // Single-hand sign
+                            const lines = fullText.split("\n");
+                            const singleHand = lines
+                                .map(ln => {
+                                    const arr = ln.trim().split(/\s+/).map(Number);
+                                    return (arr.length === 3 && !arr.includes(NaN)) ? arr : null;
+                                })
+                                .filter(Boolean)
+                                .slice(0, 21);
+
+                            allParsedFrames.push([singleHand]);
                         }
-                    })
-                    .catch(error => console.error("Error loading landmarks:", error));
-            }
+                    }
+
+                    // Do we have any frames with a second hand of length 21?
+                    const has2Hands = allParsedFrames.some(
+                        frame => frame.length === 2 && frame[1].length === 21
+                    );
+                    const dynamicNoHands = has2Hands ? 2 : 1;
+
+                    // Now update state so our “onResults” logic knows how many hands to expect
+                    setWordDataContext(prev => ({
+                        ...wordData,
+                        noHands: dynamicNoHands,
+                        numpyFrames: allParsedFrames
+                    }));
+
+                    // If we have at least one sub-frame, initialize the archetypeLandmarks
+                    if (allParsedFrames.length > 0) {
+                        setArchetypeLandmarks(allParsedFrames[0]);
+                    }
+                    console.log("Aggregated sub-frames in learn mode =>", allParsedFrames);
+
+                } catch (e) {
+                    console.error("Learn aggregator error:", e);
+                }
+            })();
         } else if (mode === "practice" && subFrameURL) {
             console.log("Practice mode: Loading big text =>", subFrameURL);
 
@@ -240,7 +268,7 @@ function HandTracking({ wordID, onFrameChange, selectedFrameIndex, image, onSign
 
                     // We'll build an array-of-frames, where each frame is
                     // either [hand1] or [hand1, hand2].
-                    const allParsedFrames = [];
+
 
                     for (const frameText of subFramesText) {
                         // Check if there's a line starting with "Hand 2" to guess two-hand
@@ -302,6 +330,7 @@ function HandTracking({ wordID, onFrameChange, selectedFrameIndex, image, onSign
                         numpyFrames: allParsedFrames,
                         correctrmseThreshold: 0.3 // or any threshold
                     });
+                    console.log(allParsedFrames);
 
                     // 4) Initialize the first frame's landmarks
                     if (allParsedFrames.length > 0) {
@@ -314,6 +343,7 @@ function HandTracking({ wordID, onFrameChange, selectedFrameIndex, image, onSign
             })();
         }
 
+        console.log(allParsedFrames)
         return () => {
             // We no longer clear data here; just prevent updates if unmounted
             isMounted = false;

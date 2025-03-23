@@ -107,6 +107,12 @@ import unmarkedfamily1 from "../../assets/tutorials/unmarkedfamily1.png";
 import numpyFamily1 from "../../assets/numpyarrays/family1.txt";
 import numpyFamily2 from "../../assets/numpyarrays/family2.txt";
 
+import NameFrame1Hand1 from "../../assets/numpyarrays/NameFrame1Hand1.txt"
+import NameFrame1Hand2 from "../../assets/numpyarrays/NameFrame1Hand2.txt"
+import NameFrame2Hand1 from "../../assets/numpyarrays/NameFrame2Hand1.txt"
+import NameFrame2Hand2 from "../../assets/numpyarrays/NameFrame2Hand2.txt"
+
+
 // easy = 0.1, default = 0.19, hard = 0.30
 // default maxRSME = 0.5
 
@@ -454,6 +460,15 @@ const WordList = [
         instructions: "Form a circle with your hands, starting from your chest outward.",
         image: unmarkedfamily1,
         numpyFrames: [numpyFamily1, numpyFamily2],
+        correctrmseThreshold: 0.3
+    },
+    {
+        id: 36,
+        title: "Test",
+        name:"Oasis 1-2-1",
+        instructions: "Form a circle with your hands, starting from your chest outward.",
+        image: unmarkedfamily1,
+        numpyFrames: [numpyB1, nametwoHands2, nametwoHands3],
         correctrmseThreshold: 0.3
     }
 
