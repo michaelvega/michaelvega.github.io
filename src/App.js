@@ -17,6 +17,7 @@ import Units from "./components/units/Units";
 import Dictionary from "./components/dictionary/Dictionary";
 import SingleWordPractice from "./components/learn/SingleWordPractice";
 import MultiSignLearn from "./components/learn/MultiSignLearn";
+import AccountDashboard from "./components/account/AccountDashboard";
 
 
 
@@ -76,7 +77,7 @@ function App() {
   };
 
   const navigateSettings = () => {
-    navigate('/settings');
+    navigate('/account');
   };
 
   return (
@@ -104,6 +105,7 @@ function App() {
           <Route path="/units/introduceYourself" element={<IntroduceYourself />} />
           <Route path={"/dropdown"} element={<DropDownHelp/>} />
           <Route path ={"/signin"} element = {<SignIn/>} />
+          <Route path="/account" element = {<AccountDashboard/>} />
         </Routes>
       </div>
   )

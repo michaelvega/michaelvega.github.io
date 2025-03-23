@@ -91,7 +91,7 @@ function SingleWordLearn() {
             setCurrentIndex(currentIndex + 1);
         } else if (isSignComplete) {
             console.log("✅ Sign practice complete!");
-            navigate("/navigation");
+            navigate("/dictionary");
         }
     };
 

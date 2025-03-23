@@ -101,7 +101,7 @@ function MultiSignLearn() {
                 setCurrentSignIndex(prev => prev + 1);
                 setCurrentTabIndex(0);
             } else {
-                navigate("/navigation");
+                navigate("/units");
             }
         }
     };
