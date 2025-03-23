@@ -131,7 +131,7 @@ function SingleWordLearn() {
                     />
                 </div>
 
-                <h1>Learn Mode</h1>
+                <h1>Learn {wordData.title}</h1>
                 <div className="learnContentWrapper">
                     <div className="componentContainerLearn">
                         {currentIndex === 0 ? (

@@ -19,7 +19,11 @@ function HandTracking({ wordID, onFrameChange, selectedFrameIndex, image, onSign
     const [advice, setAdvice] = useState("");
     const [practiceFrames, setPracticeFrames] = useState([]);
 
-    async function fetchCorrectionAdvice() {
+    const [latestUser3D, setLatestUser3D] = useState(null);
+    const [latestArchetype3D, setLatestArchetype3D] = useState(null);
+
+
+    async function fetchCorrectionAdviceAnthropic() {
         // 1) Grab current user canvas image as a data URL (initially PNG)
         const userCanvasElement = canvasRef.current;
         const userImageData = userCanvasElement.toDataURL('image/png');
@@ -149,6 +153,93 @@ function HandTracking({ wordID, onFrameChange, selectedFrameIndex, image, onSign
 
         return "Hello world!!";
     }
+
+    async function fetchCorrectionAdviceOpenAPI() {
+        if (!latestUser3D || !latestArchetype3D) return;
+
+        // Helper functions
+        function normalizeByWrist(landmarks3D) {
+            const wrist = landmarks3D[0];
+            const midBase = landmarks3D[9];
+            const midTip = landmarks3D[12];
+            const dx = midTip[0] - midBase[0];
+            const dy = midTip[1] - midBase[1];
+            const dz = midTip[2] - midBase[2];
+            const handLength = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-6;
+            return landmarks3D.map(([x, y, z]) => [
+                (x - wrist[0]) / handLength,
+                (y - wrist[1]) / handLength,
+                (z - wrist[2]) / handLength
+            ]);
+        }
+
+        function vector(a, b) {
+            return a.map((v, i) => b[i] - v);
+        }
+
+        function magnitude(v) {
+            return Math.sqrt(v.reduce((acc, val) => acc + val * val, 0));
+        }
+
+        function angleBetween(a, b) {
+            const dot = a.reduce((sum, v, i) => sum + v * b[i], 0);
+            const magA = magnitude(a);
+            const magB = magnitude(b);
+            return Math.acos(Math.min(Math.max(dot / (magA * magB), -1), 1));
+        }
+
+        function getCurl(landmarks, base, mid, tip) {
+            const v1 = vector(landmarks[base], landmarks[mid]);
+            const v2 = vector(landmarks[mid], landmarks[tip]);
+            return angleBetween(v1, v2) / Math.PI;
+        }
+
+        const user = normalizeByWrist(latestUser3D);
+        const arch = normalizeByWrist(latestArchetype3D);
+
+        const curlFeatures = {
+            "Index Finger Curl": getCurl(user, 5, 6, 8).toFixed(2),
+            "Middle Finger Curl": getCurl(user, 9, 10, 12).toFixed(2),
+            "Ring Finger Curl": getCurl(user, 13, 14, 16).toFixed(2),
+            "Pinky Curl": getCurl(user, 17, 18, 20).toFixed(2),
+            "Thumb Curl": getCurl(user, 1, 2, 4).toFixed(2),
+        };
+
+        const spreadFeatures = {
+            "Index-Middle Spread": magnitude(vector(user[5], user[9])).toFixed(2),
+            "Middle-Ring Spread": magnitude(vector(user[9], user[13])).toFixed(2),
+            "Ring-Pinky Spread": magnitude(vector(user[13], user[17])).toFixed(2),
+        };
+
+        const palmOpenness = magnitude(vector(user[0], user[12])).toFixed(2);
+
+        const featuresText = [
+            ...Object.entries(curlFeatures).map(([k, v]) => `- ${k}: ${v}`),
+            ...Object.entries(spreadFeatures).map(([k, v]) => `- ${k}: ${v}`),
+            `- Palm Openness: ${palmOpenness}`,
+        ].join("\n");
+
+        const payload = { features: featuresText };
+
+        try {
+            const res = await fetch("http://localhost:3001/feedback", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await res.json();
+            if (data?.advice) {
+                setAdvice(data.advice);
+            } else {
+                setAdvice("No advice returned.");
+            }
+        } catch (err) {
+            console.error("LLM request failed:", err);
+        }
+    }
+
+
 
     useEffect(() => {
         helpMeRef.current = helpMe;
@@ -513,6 +604,11 @@ function HandTracking({ wordID, onFrameChange, selectedFrameIndex, image, onSign
                 const userLandmarks3D = mapLandmarksTo3D(landmarks, videoWidth, videoHeight);
                 const archetypeLandmarks3D = mapLandmarksTo3D(archetypeHandLandmarks, videoWidth, videoHeight);
 
+                if (handIndex === 0) {
+                    setLatestUser3D(userLandmarks3D);
+                    setLatestArchetype3D(archetypeLandmarks3D);
+                }
+
                 const { s, R, t } = computeSimilarityTransform(archetypeLandmarks3D, userLandmarks3D);
                 const transformedArchetype3D = archetypeLandmarks3D.map((point) => {
                     return math.add(math.multiply(s, math.multiply(point, R)), t);
@@ -686,6 +782,11 @@ function HandTracking({ wordID, onFrameChange, selectedFrameIndex, image, onSign
                 const userLandmarks3D = mapLandmarksTo3D(landmarks, videoWidth, videoHeight);
                 const archetypeLandmarks3D = mapLandmarksTo3D(archetypeHandLandmarks, videoWidth, videoHeight);
 
+                if (handIndex === 0) {
+                    setLatestUser3D(userLandmarks3D);
+                    setLatestArchetype3D(archetypeLandmarks3D);
+                }
+
                 const { s, R, t } = computeSimilarityTransform(archetypeLandmarks3D, userLandmarks3D);
                 const transformedArchetype3D = archetypeLandmarks3D.map((point) => {
                     return math.add(math.multiply(s, math.multiply(point, R)), t);
@@ -795,7 +896,7 @@ function HandTracking({ wordID, onFrameChange, selectedFrameIndex, image, onSign
 
             {cameraStarted && (
                 <div style={{ marginTop: '10px' }}>
-                    <button onClick={fetchCorrectionAdvice}>Get Correction Advice</button>
+                    <button onClick={fetchCorrectionAdviceOpenAPI}>Get Correction Advice</button>
                     <label style={{ display: "flex", flexDirection: "row" }}>
                         <input
                             type="checkbox"
@@ -812,7 +913,7 @@ function HandTracking({ wordID, onFrameChange, selectedFrameIndex, image, onSign
 
             {advice && (
                 <div style={{ marginTop: '20px' }}>
-                    <h3>Claude's Advice:</h3>
+                    <h3>Aloeha's Advice:</h3>
                     <textarea
                         readOnly
                         value={advice}
