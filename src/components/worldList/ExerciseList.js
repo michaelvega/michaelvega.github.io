@@ -14,7 +14,7 @@ const ExerciseList = [
     {
         id: 3,
         name: "test",
-        numpyFrames: [36],
+        numpyFrames: [36, 2],
     }
 
 ];

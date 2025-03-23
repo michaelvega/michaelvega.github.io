@@ -1,30 +1,18 @@
-/*
- _   _                 ____                                 _           _ _
-| \ | | _____      __ |  _ \  ___ _ __  _ __ __ _  ___ __ _| |_ ___  __| | |
-|  \| |/ _ \ \ /\ / / | | | |/ _ \ '_ \| '__/ _` |/ __/ _` | __/ _ \/ _` | |
-| |\  | (_) \ V  V /  | |_| |  __/ |_) | | | (_| | (_| (_| | ||  __/ (_| |_|
-|_| \_|\___/ \_/\_/   |____/ \___| .__/|_|  \__,_|\___\__,_|\__\___|\__,_(_)
-                                 |_|
- */
-
-
-import React, { useState } from "react";
+// SingleWordLearn.js
+import React, { useEffect, useState, useRef } from "react";
 import 'bootstrap/dist/css/bootstrap.css';
 import "./Learn.css";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button, Progress } from "antd";
 import { CaretLeftOutlined, CaretRightOutlined } from '@ant-design/icons';
 
-// Our local data
 import WordList from "../worldList/WordList";
-
-// Components
 import HandTracking from "../handtrackingstate/HandTracking";
 import Tutorial from "../tutorial/Tutorial";
 
 const components = [
     { label: "Tutorial" },
-    { label: "Hand Tracking" },
+    { label: "Practice" }
 ];
 
 const twoColors = {
@@ -32,79 +20,96 @@ const twoColors = {
     '100%': '#566B30',
 };
 
-function DictionaryLearn() {
+function SingleWordLearn() {
     const { wordID } = useParams();
     const navigate = useNavigate();
 
-    // Find the single word in WordList by its ID
     const wordData = WordList.find((item) => item.id === parseInt(wordID));
 
-    // If word doesn't exist, handle gracefully
-
-    // We have just ONE sign here, so track whether user is in the tutorial or hand tracking:
     const [currentIndex, setCurrentIndex] = useState(0);
-
-    const totalFrames = wordData.numpyFrames?.length || 1; // Total frames per sign
-
-    console.log("Total Frames", totalFrames);
-
-
-    // Track if the user has successfully completed the sign
+    const [combinedSubFrameURL, setCombinedSubFrameURL] = useState(null);
+    const [totalSubFrames, setTotalSubFrames] = useState(0);
+    const [selectedFrameIndex, setSelectedFrameIndex] = useState(0);
     const [isSignComplete, setIsSignComplete] = useState(false);
 
-    // If the sign has multiple sub-frames, we can track them here:
-    const [selectedFrameIndex, setSelectedFrameIndex] = useState(0);
-    console.log("Selected Framessss", selectedFrameIndex);
+    const completedFramesRef = useRef(new Set());
 
-    if (!wordData) {
-        return <div>Content not found (invalid wordID).</div>;
+    useEffect(() => {
+        if (!wordData || !wordData.numpyFrames) return;
+
+        combineWordSubframes(wordData.numpyFrames)
+            .then(({ objectURL, total }) => {
+                setCombinedSubFrameURL(objectURL);
+                setTotalSubFrames(total);
+            })
+            .catch((err) => {
+                console.error("Error combining word frames:", err);
+            });
+    }, [wordID]);
+
+    async function combineWordSubframes(frameURLs) {
+        const parts = [];
+        let total = 0;
+
+        for (const url of frameURLs) {
+            const resp = await fetch(url);
+            const txt = await resp.text();
+
+            parts.push(txt.trim());
+            parts.push("====SUBFRAME====");
+            total++;
+        }
+
+        const combinedText = parts.join("\n");
+        const blob = new Blob([combinedText], { type: "text/plain" });
+        const objectURL = URL.createObjectURL(blob);
+
+        return { objectURL, total };
     }
 
-    // 0% if not complete, 100% if sign is complete
-    //const progressPercent = isSignComplete ? 100 : 0;
+    const handleFrameSuccess = (index) => {
+        if (completedFramesRef.current.has(index)) return;
 
-    const progressPercent = (currentIndex === components.length - 1 && totalFrames > 0 && !isSignComplete)
-        ? Math.round((selectedFrameIndex / totalFrames) * 100)
-        : (currentIndex === components.length - 1 && isSignComplete)
-            ? 100
-            : 0;
-
-    const handleFrameChange = (newIndex) => {
-        console.log("HELLOHELLOHELLOHELLOHELLOHELLOHELLOHELLOHELLOHELLOHELLOHELLOHELLOHELLO")
-        setSelectedFrameIndex(newIndex);
+        completedFramesRef.current.add(index);
+        const done = completedFramesRef.current.size;
+        setSelectedFrameIndex(index);
     };
 
-    // Step forward: either from tutorial -> hand tracking, or “Finish”
-    const handleNext = () => {
-        if (currentIndex < components.length - 1) {
-            // Move from tutorial to hand tracking
-            setCurrentIndex(currentIndex + 1);
-        } else {
-            // If user is on hand tracking, check if sign is complete
-            if (isSignComplete) {
-                // Possibly redirect somewhere or show a success message
-                // For now, we just log and/or navigate back to home
-                console.log("Sign completed in dictionary mode!");
-                navigate("/navigation");
-            }
-        }
+    const handleFrameChange = (index) => {
+        setSelectedFrameIndex(index);
     };
 
     const handleSignComplete = (isCorrect) => {
         if (isCorrect) {
             setIsSignComplete(true);
-            localStorage.setItem(wordID, "completed"); // ✅ Save completion status
+            localStorage.setItem(wordID, "completed");
         }
     };
 
-    // Step backward: only relevant if we’re on hand tracking
+    const handleNext = () => {
+        if (currentIndex < components.length - 1) {
+            setCurrentIndex(currentIndex + 1);
+        } else if (isSignComplete) {
+            console.log("✅ Sign practice complete!");
+            navigate("/navigation");
+        }
+    };
+
     const handleBack = () => {
         if (currentIndex > 0) {
-            // Move from hand tracking back to tutorial
             setCurrentIndex(currentIndex - 1);
         }
-        // No "previous sign" in dictionary mode
     };
+
+    const progressPercent = (currentIndex === components.length - 1 && totalSubFrames > 0 && !isSignComplete)
+        ? Math.round((completedFramesRef.current.size / totalSubFrames) * 100)
+        : (currentIndex === components.length - 1 && isSignComplete)
+            ? 100
+            : 0;
+
+    if (!wordData) {
+        return <div>Word not found.</div>;
+    }
 
     return (
         <div className="wrapperLearn">
@@ -126,25 +131,28 @@ function DictionaryLearn() {
                     />
                 </div>
 
-                <h1>Dictionary Mode</h1>
+                <h1>Learn Mode</h1>
                 <div className="learnContentWrapper">
                     <div className="componentContainerLearn">
                         {currentIndex === 0 ? (
                             <Tutorial wordID={wordID} />
                         ) : (
-                            <HandTracking
-                                key={wordID}
-                                wordID={wordID}
-                                selectedFrameIndex={selectedFrameIndex}
-                                onFrameChange={handleFrameChange}
-                                image={wordData.image}
-                                onSignComplete={handleSignComplete}
-                                mode={"dictionary"} // dictionary so no subframe url
-                            />
+                            combinedSubFrameURL && (
+                                <HandTracking
+                                    key={wordID}
+                                    wordID={wordID}
+                                    selectedFrameIndex={selectedFrameIndex}
+                                    onFrameChange={handleFrameChange}
+                                    subFrameURL={combinedSubFrameURL}
+                                    image={wordData.image}
+                                    onSignComplete={handleSignComplete}
+                                    onFrameSuccess={handleFrameSuccess}
+                                    mode={"practice"}
+                                />
+                            )
                         )}
 
-                        {/* Only show example image if we are on Hand Tracking */}
-                        {components[currentIndex].label === "Hand Tracking" && (
+                        {components[currentIndex].label === "Practice" && (
                             <img
                                 className="exampleImg"
                                 src={wordData.image}
@@ -187,4 +195,4 @@ function DictionaryLearn() {
     );
 }
 
-export default DictionaryLearn;
+export default SingleWordLearn;

@@ -15,6 +15,8 @@ import DictionaryLearn from "./components/learn/DictionaryLearn";
 import Practice from "./components/learn/Practice";
 import Units from "./components/units/Units";
 import Dictionary from "./components/dictionary/Dictionary";
+import SingleWordPractice from "./components/learn/SingleWordPractice";
+import MultiSignLearn from "./components/learn/MultiSignLearn";
 
 
 
@@ -94,9 +96,9 @@ function App() {
           <Route path="/" element={<Landing/>}/>
           <Route path="/landing" element={<Landing />} />
           <Route path="/introduction" element={<Introduction />} />
-          <Route path="/learn/:exerciseID/:wordID" element={<Learn type={"learn"} />} />
-          <Route path="/practice/:exerciseID" element={<Practice type={"practice"} />} />
-          <Route path="/dictionary/:wordID" element={<DictionaryLearn type={"learn"} />} />
+          <Route path="/learn/:exerciseID" element={<MultiSignLearn  />} />
+          <Route path="/practice/:exerciseID" element={<Practice  />} />
+          <Route path="/dictionary/:wordID" element={<SingleWordPractice  />} />
           <Route path="/dictionary/" element={<Dictionary />} />
           <Route path="/units" element={<Units />} />
           <Route path="/units/introduceYourself" element={<IntroduceYourself />} />
