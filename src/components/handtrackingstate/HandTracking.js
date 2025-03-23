@@ -346,7 +346,13 @@ function HandTracking({ wordID, onFrameChange, selectedFrameIndex, image, onSign
 
         console.log("Reconfiguring Mediapipe for maxHands =", maxHands);
 
-
+        /* TODO: add this v
+        if (handsRef.current && handsRef.current.options?.maxNumHands !== maxHands) {
+    console.log("Reinitializing Mediapipe Hands due to hand count change");
+    handsRef.current.close(); // Properly dispose
+    handsRef.current = new window.Hands({ ... }); // recreate and set options again
+}
+         */
 
         handsRef.current.setOptions({
             maxNumHands: maxHands,
@@ -547,7 +553,7 @@ function HandTracking({ wordID, onFrameChange, selectedFrameIndex, image, onSign
                     // This means we expected a hand here but it wasn't detected
                     console.warn(`Hand ${handIndex + 1} not detected. Expected ${validHandsInArchetype} hands, got ${results.multiHandLandmarks.length}.`);
                     allHandsCorrect = false;
-                    continue;
+                    return;
                 }
 
                 // If we have the hand detected, proceed with the existing logic
