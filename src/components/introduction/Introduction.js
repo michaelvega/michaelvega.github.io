@@ -41,8 +41,22 @@ function Introduction() {
     };
 
     const navigateLearn = () => {
-        navigate('/learn/1');
-    }
+        const initials = localStorage.getItem("userInitials"); // e.g., "AG"
+        const frameIDs = [28, 27]; // "my name is"
+
+        for (const char of initials.toUpperCase()) {
+            const code = char.charCodeAt(0) - 64; // 'A' = 1
+            frameIDs.push(code);
+        }
+
+        localStorage.setItem("customExercise", JSON.stringify({
+            id: 999,
+            name: `MyNameIs${initials}`,
+            numpyFrames: frameIDs
+        }));
+
+        navigate('/learn/999');
+    };
 
     const progressPercent = ((currentFrame + 1) / frames.length) * 100;
 

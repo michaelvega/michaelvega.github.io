@@ -24,7 +24,15 @@ function MultiSignLearn() {
     const { exerciseID } = useParams();
     const navigate = useNavigate();
 
-    const exercise = ExerciseList.find(item => item.id === parseInt(exerciseID));
+    let exercise = ExerciseList.find(item => item.id === parseInt(exerciseID));
+
+    if (!exercise && parseInt(exerciseID) === 999) {
+        const saved = localStorage.getItem("customExercise");
+        if (saved) {
+            exercise = JSON.parse(saved);
+        }
+    }
+
     const wordIDs = exercise?.numpyFrames || [];
 
     const [currentSignIndex, setCurrentSignIndex] = useState(0);         // Word in the series
